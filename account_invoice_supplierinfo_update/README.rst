@@ -2,9 +2,9 @@
    :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
    :alt: License: AGPL-3
 
-======================================================
-Update Supplier Price of product from Supplier Invoice
-======================================================
+=====================================================
+Update Supplier Info of product from Supplier Invoice
+=====================================================
 This module allows in the supplier invoice, to automatically update all
 products whose unit price on the line is different from the supplier price.
 It creates a new supplier price if there is not or it updates the first.
@@ -23,16 +23,23 @@ Bug Tracker
 Bugs are tracked on GitHub Issues. In case of trouble, please check there
 if your issue has already been reported. If you spotted it first,
 help us smashing it by providing a detailed and welcomed feedback.
- 
+
+Known Issues / Roadmap
+======================
+
+* This module does not manage correctly different if
+    * invoice line UoM are not the same as Supplierinfo UoM
+    * invoice line taxes are not the same as products taxes
+
 Credits
 =======
- 
+
 Contributors
 ------------
- 
-* Chafique Delli <chafique.delli@akretion.com>
 
- 
+* Chafique Delli <chafique.delli@akretion.com>
+* Sylvain LE GAL (https://twitter.com/legalsylvain)
+
 Maintainer
 ----------
  
