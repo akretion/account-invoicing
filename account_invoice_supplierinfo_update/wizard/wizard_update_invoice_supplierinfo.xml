@@ -6,11 +6,10 @@
     <record id="view_wizard_update_invoice_supplierinfo_form" model="ir.ui.view">
         <field name="model">wizard.update.invoice.supplierinfo</field>
         <field name="arch" type="xml">
-            <form string="Update supplier price of products">
+            <form>
                 <group col="4" colspan="4">
                     <field name="invoice_id" invisible="1"/>
                     <field name="state" invisible="1"/>
-                    <field name="invoice_id"/>
                     <field name="supplier_partner_id"/>
                 </group>
                 <separator string="List of products to update"/>
@@ -32,13 +31,11 @@
                             string="Update without Validating"
                             type="object"
                             class="oe_highlight"/>
-                    or
                     <button name="update_supplierinfo_validate"
                             string="Update and Validate"
                             type="object" states="draft,proforma2"
                             groups="account.group_account_invoice"/>
-                    or
-                    <button name="set_supplierinfo_ok" string="Set the invoice as Checked" type="object"
+                    <button name="set_supplierinfo_ok" string="Ignore (Set the invoice as Checked)" type="object"
                         confirm="This will mark the invoice as checked. Are you sure? It will be possible to uncheck manually in the 'Other Info' tab."/>
                     or
                     <button string="Cancel" class="oe_link" special="cancel"/>

@@ -71,6 +71,4 @@ class AccountInvoiceLine(models.Model):
                 partnerinfo and partnerinfo.min_quantity or False,
             'state': state,
             'price_variation': price_variation,
-
-
         }

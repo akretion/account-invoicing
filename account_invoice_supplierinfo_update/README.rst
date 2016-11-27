@@ -5,10 +5,36 @@
 =====================================================
 Update Supplier Info of product from Supplier Invoice
 =====================================================
-This module allows in the supplier invoice, to automatically update all
-products whose unit price on the line is different from the supplier price.
-It creates a new supplier price if there is not or it updates the first.
 
+This module allows in the supplier invoice, to automatically update all
+products informations whose purchase informations on the line are different
+from the supplier informations, defined on the product form.
+
+It creates a new supplier information line if there is not or it updates the
+first.
+
+This module add an extra button 'Check Supplier Informations' on supplier
+invoice form.
+
+.. image:: /account_invoice_supplierinfo_update/static/description/supplier_invoice_form.png
+
+
+When user click on it, he can see supplier informations changes, that will
+be applied. Optionnaly, he can unselect some temporary changes, specially, if
+supplier applied an exceptionnal price change.
+
+.. image:: /account_invoice_supplierinfo_update/static/description/main_screenshot.png
+
+* blue: Create a full new supplier info
+* brown: Adding a partnerinfo line in a existing supplierinfo
+* black: Updating a current setting, displaying price variation (%)
+
+This module add an extra boolean field 'Supplier Informations Checked' in the
+'Other Info' tab in the supplier invoice form, that indicates that the prices
+have been checked, and supplierinfo updated, (or eventually that the 
+changes have been ignored).
+
+.. image:: /account_invoice_supplierinfo_update/static/description/supplier_invoice_form_other_info_tab.png
 
 Usage
 =====
@@ -27,9 +53,11 @@ help us smashing it by providing a detailed and welcomed feedback.
 Known Issues / Roadmap
 ======================
 
-* This module does not manage correctly different if
+* This module does not manage correctly difference if
     * invoice line UoM are not the same as Supplierinfo UoM
-    * invoice line taxes are not the same as products taxes
+    * invoice line taxes are not the same as products taxes. (If one is
+      marked as tax included in the price and the other is marked as
+      tax excluded in the price)
 
 Credits
 =======

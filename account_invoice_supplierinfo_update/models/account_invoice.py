@@ -16,10 +16,10 @@ class AccountInvoice(models.Model):
         compute='_compute_supplier_partner_id')
 
     supplierinfo_ok = fields.Boolean(
-        string='Supplierinfos Checked', help="Checked if the check of"
+        string='Supplier Informations Checked', help="Checked if the check of"
         " supplierinfo has been done.\n"
-        " - Check this box, if you want to check again this invoice\n"
-        " - Uncheck this box, if you want to mark this invoice as checked")
+        " - Uncheck this box, if you want to check again this invoice\n"
+        " - Check this box, if you want to mark this invoice as checked")
 
     # Compute Section
     @api.multi
@@ -35,7 +35,9 @@ class AccountInvoice(models.Model):
         lines = []
 
         for line in self.invoice_line:
-            propose_update = True
+            if not line.product_id:
+                continue
+
             # Get supplierinfo if exist
             supplierinfo = line._get_supplierinfo()
 
@@ -44,14 +46,13 @@ class AccountInvoice(models.Model):
                 partnerinfo = line._get_partnerinfo(supplierinfo)
                 if partnerinfo and line._is_correct_partner_info(
                         partnerinfo):
-                    propose_update = False
+                    continue
             else:
                 partnerinfo = False
 
             # Propose updating, if needed
-            if propose_update:
-                lines.append((0, 0, line._prepare_supplier_wizard_line(
-                    supplierinfo, partnerinfo)))
+            lines.append((0, 0, line._prepare_supplier_wizard_line(
+                supplierinfo, partnerinfo)))
         return lines
 
     # View Section
@@ -68,8 +69,7 @@ class AccountInvoice(models.Model):
                 'account_invoice_supplierinfo_update.'
                 'view_wizard_update_invoice_supplierinfo_form')
             return {
-                'name': _("Update product supplier price with unit price "
-                          "of this supplier invoice."),
+                'name': _("Update supplier informations of products"),
                 'type': 'ir.actions.act_window',
                 'view_mode': 'form',
                 'res_model': 'wizard.update.invoice.supplierinfo',

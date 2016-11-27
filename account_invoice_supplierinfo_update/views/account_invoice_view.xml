@@ -6,8 +6,8 @@
         <field name="inherit_id" ref="account.invoice_supplier_form"/>
         <field name="arch" type="xml">
             <xpath expr="//button[@name='invoice_open']" position="after">
-                <button name="check_supplierinfo" string="Check Supplier Infos"
-                        help="Update supplier informations for invoice lines that have different purchase informations"
+                <button name="check_supplierinfo" string="Check Supplier Informations"
+                        help="Check if the invoice informations are similar from the supplier informations"
                         class="oe_highlight" type="object"
                         attrs="{'invisible': [('supplierinfo_ok', '=', True)]}"/>
             </xpath>

@@ -28,4 +28,5 @@
     'demo': [
         'demo/account_invoice.xml',
     ],
+    'images': ['static/description/main_screenshot.png'],
 }
