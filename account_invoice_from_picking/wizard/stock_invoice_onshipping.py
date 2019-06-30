@@ -128,10 +128,12 @@ class StockInvoiceOnshipping(models.TransientModel):
 
         if action_id:
             action_pool = self.pool['ir.actions.act_window']
-            action_pool_id = self.env['ir.actions.act_window'].browse(action_id)
+            action_pool_id = self.env['ir.actions.act_window'].browse(
+                action_id)
             action = action_pool.read(action_pool_id)
 
-            action[0]['domain'] = "[('id','in', " + str(list_invoice_ids) + ")]"
+            action[0]['domain'] = "[('id','in', " + \
+                str(list_invoice_ids) + ")]"
             return action[0]
         return True
 
@@ -153,6 +155,6 @@ class StockInvoiceOnshipping(models.TransientModel):
             active_ids=active_ids,
             journal_id=self.journal_id.id,
             group=self.group,
-            type=inv_type,
+            inv_type=inv_type,
         )
         return res

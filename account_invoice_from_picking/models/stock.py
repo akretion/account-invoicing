@@ -53,13 +53,13 @@ class StockMove(models.Model):
         return self.env['account.invoice.line'].create(invoice_line_vals)
 
     @api.multi
-    def _get_price_unit_invoice(self, move_line, type):
+    def _get_price_unit_invoice(self, move_line, inv_type):
         """ Gets price unit for invoice
         @param move_line: Stock move lines
         @param type: Type of invoice
         @return: The price unit for the move line
         """
-        if type in ('in_invoice', 'in_refund'):
+        if inv_type in ('in_invoice', 'in_refund'):
             return move_line.price_unit
         else:
             # If partner given, search price in its sale pricelist
@@ -70,9 +70,9 @@ class StockMove(models.Model):
                 price = pricelist_obj.price_get(
                     [pricelist], move_line.product_id.id,
                     move_line.product_uom_qty, move_line.partner_id.id, {
-                            'uom': move_line.product_uom.id,
-                            'date': move_line.date,
-                            })[pricelist]
+                        'uom': move_line.product_uom.id,
+                        'date': move_line.date,
+                    })[pricelist]
                 if price:
                     return price
         return move_line.product_id.lst_price
@@ -130,7 +130,7 @@ class StockPicking(models.Model):
         inverse=_set_inv_state,
         store=True,
         default='none'
-        )
+    )
 
     @api.model
     def _create_invoice_from_picking(self, picking, vals):
@@ -152,18 +152,19 @@ class StockPicking(models.Model):
 
     @api.multi
     def action_invoice_create(
-            self, active_ids, journal_id, group=False, type='out_invoice'):
+            self, active_ids, journal_id, group=False,
+            inv_type='out_invoice'):
         """ Creates invoice based on the invoice state selected for picking.
         @param journal_id: Id of journal
         @param group: Whether to create a group invoice or not
-        @param type: Type invoice to be created
+        @param inv_type: Type invoice to be created
         @return: Ids of created invoices for the pickings
         """
         todo = {}
         for picking_id in active_ids:
             picking = self.env['stock.picking'].browse(picking_id)
             partner = self.with_context(
-                type=type)._get_partner_to_invoice(picking)
+                inv_type=inv_type)._get_partner_to_invoice(picking)
             # grouping is based on the invoiced partner
             if group:
                 key = partner
@@ -177,7 +178,7 @@ class StockPicking(models.Model):
         invoices = []
         for moves in todo.values():
             invoices += self._invoice_create_line(
-                active_ids, moves, journal_id, type)
+                active_ids, moves, journal_id, inv_type)
         return invoices
 
     @api.multi
@@ -209,6 +210,7 @@ class StockPicking(models.Model):
             self, picking_ids, moves, journal_id, inv_type='out_invoice'):
 
         invoice_obj = self.env['account.invoice']
+        invoice_line_obj = self.env['account.invoice.line']
         move_obj = self.env['stock.move']
         invoices = {}
         is_extra_move, extra_move_tax = move_obj._get_moves_taxes(
@@ -270,7 +272,11 @@ class StockPicking(models.Model):
                 while index < len(invoice_line):
                     for line in invoice_line[index]:
                         if type(line) is dict:
-                            result_invoice_line.append([0, 0, line])
+                            result_invoice_line.append(
+                                [0, 0, invoice_line_obj._convert_to_write(
+                                    line
+                                )]
+                            )
                     index += 1
 
             invoice_id.write({'invoice_line_ids': result_invoice_line})

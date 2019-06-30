@@ -96,7 +96,7 @@ class TestAccountInvoiceFromPicking(common.TransactionCase):
         wizard_group_partner.open_invoice()
 
         invoice_origin = str(self.stock_picking_2.name) + ', ' +\
-                         str(self.stock_picking_3.name)
+            str(self.stock_picking_3.name)
         grouping_invoice = self.env['account.invoice'].search([(
             'origin', '=', invoice_origin
         )])
