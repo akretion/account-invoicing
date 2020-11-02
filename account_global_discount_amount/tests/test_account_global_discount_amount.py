@@ -1,5 +1,6 @@
 # Copyright 2020 Akretion France (http://www.akretion.com)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo.tests.common import SavepointCase
 
 
@@ -104,7 +105,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
                     "global_discount_amount": 50.00,
                 })
 
-    def test_invoice_single_tax_without_change_global_discount(self):
+    def test_create_invoice_single_tax_without_change_global_discount(self):
         self.assertEqual(self.invoice_single_tax.amount_total, 187.00)
         self.assertEqual(self.invoice_single_tax.amount_tax, 17.00)
         self.assertEqual(self.invoice_single_tax.global_discount_ok, True)
@@ -119,7 +120,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
         self.assertEqual(len(discount_move_lines[0].tax_ids), 1)
         self.assertEqual(discount_move_lines[0].tax_ids[0].name, "TEST 10%")
 
-    def test_invoice_multi_tax_without_change_global_discount(self):
+    def test_create_invoice_multi_tax_without_change_global_discount(self):
         self.assertEqual(self.invoice_multi_tax.amount_untaxed, 300.00)
         self.assertEqual(self.invoice_multi_tax.amount_tax, 42.86)
         self.assertEqual(self.invoice_multi_tax.amount_total, 342.86)
@@ -136,7 +137,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
             lambda x: x.tax_ids == self.vat20)
         self.assertEqual(discount_line_20.price_unit, -21.43)
 
-    def test_invoice_single_tax_with_change_global_discount(self):
+    def test_write_invoice_single_tax_with_change_global_discount(self):
         self.invoice_single_tax.write({"global_discount_amount": 25.00})
         self.assertEqual(self.invoice_single_tax.amount_total, 192.50)
         self.assertEqual(self.invoice_single_tax.amount_tax, 17.50)
@@ -149,7 +150,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
         self.assertEqual(discount_move_lines[0].is_discount_line, True)
         self.assertEqual(discount_move_lines[0].price_unit, -25.00)
 
-    def test_invoice_multi_tax_with_change_global_discount(self):
+    def test_write_invoice_multi_tax_with_change_global_discount(self):
         self.invoice_multi_tax.write({"global_discount_amount": 45.00})
         self.assertEqual(self.invoice_multi_tax.amount_untaxed, 305.00)
         self.assertEqual(self.invoice_multi_tax.amount_tax, 43.57)
@@ -166,3 +167,26 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
         discount_line_20 = discount_move_lines.filtered(
             lambda x: x.tax_ids == self.vat20)
         self.assertEqual(discount_line_20.price_unit, -19.29)
+
+    def test_write_invoice_single_tax_with_null_global_discount(self):
+        self.invoice_single_tax.write({"global_discount_amount": 0.00})
+        self.assertEqual(self.invoice_single_tax.amount_total, 200.00)
+        self.assertEqual(self.invoice_single_tax.amount_tax, 20.00)
+        self.assertEqual(self.invoice_single_tax.global_discount_ok, True)
+        discount_move_lines = self.env["account.move.line"].search([
+            ("product_id", "=", self.product_discount.id),
+            ("move_id", "=", self.invoice_single_tax.id)
+        ])
+        self.assertEqual(len(discount_move_lines), 0)
+
+    def test_write_invoice_multi_tax_with_null_global_discount(self):
+        self.invoice_multi_tax.write({"global_discount_amount": 0.00})
+        self.assertEqual(self.invoice_multi_tax.amount_untaxed, 350.00)
+        self.assertEqual(self.invoice_multi_tax.amount_tax, 50.00)
+        self.assertEqual(self.invoice_multi_tax.amount_total, 400.00)
+        self.assertEqual(self.invoice_multi_tax.global_discount_ok, True)
+        discount_move_lines = self.env["account.move.line"].search([
+            ("product_id", "=", self.product_discount.id),
+            ("move_id", "=", self.invoice_multi_tax.id)
+        ])
+        self.assertEqual(len(discount_move_lines), 0)
