@@ -105,7 +105,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
                     "global_discount_amount": 50.00,
                 })
 
-    def test_create_invoice_single_tax_without_change_global_discount(self):
+    def test_create_invoice_single_tax_with_global_discount(self):
         self.assertEqual(self.invoice_single_tax.amount_total, 187.00)
         self.assertEqual(self.invoice_single_tax.amount_tax, 17.00)
         self.assertEqual(self.invoice_single_tax.global_discount_ok, True)
@@ -120,7 +120,7 @@ class TestAccountGlobalDiscountAmount(SavepointCase):
         self.assertEqual(len(discount_move_lines[0].tax_ids), 1)
         self.assertEqual(discount_move_lines[0].tax_ids[0].name, "TEST 10%")
 
-    def test_create_invoice_multi_tax_without_change_global_discount(self):
+    def test_create_invoice_multi_tax_with_global_discount(self):
         self.assertEqual(self.invoice_multi_tax.amount_untaxed, 300.00)
         self.assertEqual(self.invoice_multi_tax.amount_tax, 42.86)
         self.assertEqual(self.invoice_multi_tax.amount_total, 342.86)
