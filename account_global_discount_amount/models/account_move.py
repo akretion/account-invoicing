@@ -74,11 +74,13 @@ class AccountMoveLine(models.Model):
             "product_id": discount_product.id,
             "move_id": move.id,
             "partner_id": move.partner_id.id})
+        discount_line._onchange_product_id()
         discount_line_vals = discount_line._prepare_discount_line_vals(
             amount_untaxed=amount_untaxed,
             tax_base_amount=tax_base_amount,
             global_discount_amount=global_discount_amount,
             tax_ids=tax_ids)
+        discount_line_vals["move_id"] = move.id
         discount_line.with_context(check_move_validity=False).unlink()
         self.with_context(check_move_validity=False).create(
             discount_line_vals)
