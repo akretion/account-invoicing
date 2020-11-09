@@ -16,14 +16,16 @@ class DiscountMixin(models.AbstractModel):
         compute="_compute_global_discount_ok", store=True,
         help="The application of the global discount amount is right")
 
+    def _get_line_ids_by_model(self):
+        if self._name == "account.move":
+            line_ids = self.invoice_line_ids
+            return line_ids
+
     @api.depends("global_discount_amount", "amount_tax", "amount_total")
     def _compute_global_discount_ok(self):
         for record in self:
             global_discount_ok = True
-            if record._name == "account.move":
-                line_ids = record.invoice_line_ids
-            elif record._name == "sale.order":
-                line_ids = record.order_line
+            line_ids = record._get_line_ids_by_model()
             if (line_ids.filtered(lambda x: x.is_discount_line) or
                     record.global_discount_amount != 0.0):
                 discount_line_total_amount = 0.0
