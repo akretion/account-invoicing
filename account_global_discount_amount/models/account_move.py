@@ -69,8 +69,7 @@ class AccountMoveLine(models.Model):
         global_discount_amount = move.global_discount_amount
         discount_product = self.env.ref(
             "account_global_discount_amount.discount_product")
-        discount_line = self.env["account.move.line"].new()
-        discount_line.with_context(check_move_validity=False).write({
+        discount_line = self.env["account.move.line"].new({
             "product_id": discount_product.id,
             "move_id": move.id,
             "partner_id": move.partner_id.id})
@@ -78,9 +77,12 @@ class AccountMoveLine(models.Model):
         discount_line_vals = discount_line._prepare_discount_line_vals(
             amount_untaxed=amount_untaxed,
             tax_base_amount=tax_base_amount,
-            global_discount_amount=global_discount_amount,
-            tax_ids=tax_ids)
-        discount_line_vals["move_id"] = move.id
+            global_discount_amount=global_discount_amount)
+        discount_line_vals.update({"move_id": move.id,
+                                   "partner_id": move.partner_id.id,
+                                   "quantity": 1,
+                                   "tax_ids": tax_ids,
+                                   "account_id": discount_line.account_id.id})
         discount_line.with_context(check_move_validity=False).unlink()
         self.with_context(check_move_validity=False).create(
             discount_line_vals)

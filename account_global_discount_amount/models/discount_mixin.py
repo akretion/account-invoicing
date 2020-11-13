@@ -49,16 +49,12 @@ class DiscountLineMixin(models.AbstractModel):
 
     is_discount_line = fields.Boolean(string="Is Discount Line")
 
-    def _prepare_discount_line_vals(self, tax_ids, amount_untaxed,
+    def _prepare_discount_line_vals(self, amount_untaxed,
                                     tax_base_amount, global_discount_amount):
         price_unit = (
             tax_base_amount / amount_untaxed) * global_discount_amount
         return {"product_id": self.product_id.id,
-                "quantity": 1,
                 "price_unit": -1 * price_unit,
-                "tax_ids": tax_ids,
-                "account_id": self.account_id.id,
                 "name": self.name,
-                "partner_id": self.partner_id.id,
                 "is_discount_line": True,
                 }
