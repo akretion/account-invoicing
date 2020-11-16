@@ -13,7 +13,8 @@ class AccountMove(models.Model):
         move = super(AccountMove, self).create(vals)
         if ("global_discount_amount" in vals[0] and
             vals[0]["global_discount_amount"] != 0.0 and
-                move.amount_untaxed != 0.0):
+                move.amount_untaxed != 0.0 and
+                not self.env.context.get("discount_lines_from_sale", False)):
             self.env["account.move.line"]._create_discount_lines(move=move)
             move.with_context(check_move_validity=False)._recompute_tax_lines()
         return move
