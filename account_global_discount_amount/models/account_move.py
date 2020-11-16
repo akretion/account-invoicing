@@ -11,7 +11,8 @@ class AccountMove(models.Model):
     @api.model_create_multi
     def create(self, vals):
         move = super(AccountMove, self).create(vals)
-        if (vals[0]["global_discount_amount"] != 0.0 and
+        if ("global_discount_amount" in vals[0] and
+            vals[0]["global_discount_amount"] != 0.0 and
                 move.amount_untaxed != 0.0):
             self.env["account.move.line"]._create_discount_lines(move=move)
             move.with_context(check_move_validity=False)._recompute_tax_lines()
@@ -21,7 +22,9 @@ class AccountMove(models.Model):
         res = super(AccountMove, self).write(vals)
         if (("global_discount_amount" in vals or "line_ids" in vals or
              not self.global_discount_ok) and
-                not self.env.context.get("discount_lines", False)):
+                not self.env.context.get("discount_lines", False) and
+                not self.env.context.get("discount_lines_from_sale", False)):
+            # we can not unlink move lines linked with sale lines
             self.invoice_line_ids.filtered(
                 lambda x: x.is_discount_line).with_context(
                     check_move_validity=False, discount_lines=True).unlink()
