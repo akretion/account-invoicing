@@ -12,7 +12,8 @@ class AccountMove(models.Model):
     def create(self, vals):
         move = super(AccountMove, self).create(vals)
         if (
-            "global_discount_amount" in vals[0]
+            vals
+            and "global_discount_amount" in vals[0]
             and vals[0]["global_discount_amount"] != 0.0
             and move.amount_untaxed != 0.0
             and not self.env.context.get("discount_lines_from_sale", False)
