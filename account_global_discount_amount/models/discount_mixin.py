@@ -59,4 +59,7 @@ class DiscountLineMixin(models.AbstractModel):
     def _prepare_discount_line_vals(
         self, amount_untaxed, tax_base_amount, global_discount_amount
     ):
-        return (tax_base_amount / amount_untaxed) * global_discount_amount
+        if amount_untaxed:
+            return (tax_base_amount / amount_untaxed) * global_discount_amount
+        else:
+            return 0

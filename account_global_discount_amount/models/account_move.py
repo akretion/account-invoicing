@@ -76,6 +76,17 @@ class AccountMoveLine(models.Model):
     _name = "account.move.line"
 
     def _create_discount_lines(self, move):
+        if (
+            move.invoice_origin
+            and len(
+                self.env["account.move"].search(
+                    [("invoice_origin", "=", move.invoice_origin)]
+                )
+            )
+            > 1
+        ):
+            # we assume this is a credit note no discount creation needed
+            return
         amount_untaxed = move.amount_untaxed
         # create discount lines by tax line
         with_tax_lines = move.line_ids.filtered(lambda x: x.tax_line_id)
@@ -89,7 +100,7 @@ class AccountMoveLine(models.Model):
                 amount_untaxed=amount_untaxed,
             )
         # create one discount line for the all invoice lines without tax lines
-        lines_with_tax = move.line_ids.filtered(lambda x: x.tax_ids)
+        lines_with_tax = move.line_ids.filtered(lambda x: x.tax_ids and x.quantity)
         line_tax_ids = lines_with_tax.tax_ids - with_tax_lines.tax_line_id
         without_tax_lines = move.invoice_line_ids.filtered(
             lambda x: x.tax_ids == line_tax_ids
@@ -111,15 +122,24 @@ class AccountMoveLine(models.Model):
         discount_product = self.env.ref(
             "account_global_discount_amount.discount_product"
         )
-        discount_line = self.with_context(check_move_validity=False).create(
-            {
-                "product_id": discount_product.id,
-                "move_id": move.id,
-                "partner_id": move.partner_id.id,
-                "quantity": 1,
-                "account_id": move.line_ids[0]._get_computed_account().id,
-            }
+        discount_line = self.search(
+            [
+                ("product_id", "=", discount_product.id),
+                ("move_id", "=", move.id),
+                ("tax_ids", "=", tax_ids[0][2][0]),
+            ],
+            limit=1,
         )
+        if not len(discount_line):
+            discount_line = self.with_context(check_move_validity=False).create(
+                {
+                    "product_id": discount_product.id,
+                    "move_id": move.id,
+                    "partner_id": move.partner_id.id,
+                    "quantity": 1,
+                    "account_id": move.line_ids[0]._get_computed_account().id,
+                }
+            )
         discount_line._onchange_product_id()
         price_unit = discount_line._prepare_discount_line_vals(
             amount_untaxed=amount_untaxed,
