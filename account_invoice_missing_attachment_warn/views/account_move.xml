@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2023 Akretion France (http://www.akretion.com/)
+  @author: Alexis de Lattre <alexis.delattre@akretion.com>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+<record id="view_move_form" model="ir.ui.view">
+    <field name="model">account.move</field>
+    <field name="inherit_id" ref="account.view_move_form" />
+    <field name="arch" type="xml">
+        <div role="alert" position="after">
+            <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('show_missing_attachment_warn', '=', False)]}"
+                >Attachment is missing.</div>
+        </div>
+        <field name="invoice_incoterm_id" position="after">
+            <field name="message_attachment_count" invisible="0" />
+            <field name="message_main_attachment_id" invisible="0" />
+            <field name="show_missing_attachment_warn" invisible="0" />
+            <field name="write_date" invisible="0" />
+        </field>
+    </field>
+</record>
+
+</odoo>
