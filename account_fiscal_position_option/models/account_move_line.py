@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ##############################################################################
 #
 #  licence AGPL version 3 or later
@@ -6,7 +5,7 @@
 #  Copyright (C) 2015 Akretion (http://www.akretion.com).
 #
 ##############################################################################
-from openerp import models, fields, api, _
+from openerp import api, models
 
 
 class AccountMoveLine(models.Model):
