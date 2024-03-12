@@ -1,7 +1,7 @@
 # Copyright (C) 2018 Akretion
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 
-from openerp import api, fields, models
+from odoo import api, fields, models
 
 
 class SaleOrderLine(models.Model):
@@ -22,7 +22,6 @@ class SaleOrderLine(models.Model):
         vals["fiscal_position_option_id"] = line.fiscal_position_option_id.id
         return vals
 
-    @api.multi
     def product_id_change(
         self,
         pricelist,

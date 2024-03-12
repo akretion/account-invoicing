@@ -1,17 +1,20 @@
-##############################################################################
-#
-#  licence AGPL version 3 or later
-#  see licence in __openerp__.py or http://www.gnu.org/licenses/agpl-3.0.txt
-#  Copyright (C) 2015 Akretion (http://www.akretion.com).
-#
-##############################################################################
-from openerp import api, models
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
+from odoo import api, models
 
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
-    @api.multi
+    fiscal_position_option_id = fields.Many2one(
+        "account.fiscal.position.option", string="Fiscal position option"
+    )
+
+    def _sale_prepare_sale_line_values(self, order, price):
+        return super(AccountMoveLine, self.with_context(fiscal_position_option_id=self.fiscal_position_option_id))._sale_prepare_sale_line_values(order, price)
+
+    def _compute_account_id(self):
+        return super(AccountMoveLine, self.with_context(fiscal_position_option_id=self.fiscal_position_option_id))._compute_account_id()
+
     def onchange_partner_id(
         self,
         move_id,
@@ -34,7 +37,6 @@ class AccountMoveLine(models.Model):
             journal=journal,
         )
 
-    @api.multi
     def onchange_account_id(self, account_id=False, partner_id=False):
         return super(
             AccountMoveLine, self.with_context(fiscal_position_option_id=False)

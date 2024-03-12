@@ -1,7 +1,7 @@
 # Copyright (C) 2018 Akretion
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 
-from openerp import api, fields, models
+from odoo import api, fields, models
 
 
 class AccountInvoiceLine(models.Model):
@@ -11,7 +11,6 @@ class AccountInvoiceLine(models.Model):
         comodel_name="account.fiscal.position.option", string="Fiscal position option"
     )
 
-    @api.multi
     def product_id_change(
         self,
         product,
@@ -60,7 +59,6 @@ class AccountInvoiceLine(models.Model):
         if "account_id" in product_change_result.get("value", {}):
             self.account_id = product_change_result["value"]["account_id"]
 
-    @api.multi
     def onchange_account_id(
         self, product_id, partner_id, inv_type, fposition_id, account_id
     ):

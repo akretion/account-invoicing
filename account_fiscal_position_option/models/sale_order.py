@@ -1,7 +1,7 @@
 # Copyright (C) 2018 Akretion
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 
-from openerp import _, api, fields, models
+from odoo import _, api, fields, models
 
 
 class SaleOrder(models.Model):
