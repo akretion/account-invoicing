@@ -212,7 +212,17 @@
                         attrs="{'invisible': [('state', '=', 'draft')]}"
                     />
                     <field
+                        name="budget_total_consumption"
+                        class="oe_subtotal_footer_separator"
+                        attrs="{'invisible': [('state', '=', 'draft')]}"
+                    />
+                    <field
                         name="budget_untaxed_residual"
+                        class="oe_subtotal_footer_separator"
+                        attrs="{'invisible': [('state', '=', 'draft')]}"
+                    />
+                    <field
+                        name="budget_total_residual"
                         class="oe_subtotal_footer_separator"
                         attrs="{'invisible': [('state', '=', 'draft')]}"
                     />

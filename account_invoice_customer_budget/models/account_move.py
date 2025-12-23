@@ -221,28 +221,22 @@ class AccountMove(models.Model):
                             }
                         )
             for budget, _price_total in budget_amounts.items():
-                consumption_untaxed_amount = round(_price_total["price_subtotal"], 2)
                 consumption_total_amount = round(_price_total["price_total"], 2)
-                available_untaxed_amount = budget.budget_untaxed_residual
+                available_total_amount = budget.budget_total_residual
                 # consumption_total_amount is negative #
-                # and budget.budget_total_residual is positif
-                if (
-                    round(consumption_total_amount + budget.budget_total_residual, 2)
-                    < 0
-                ):
+                # and available_total_amount is positif
+                if round(consumption_total_amount + available_total_amount, 2) < 0:
                     raise ValidationError(
                         _(
                             "Please check the amount available of budget %(budget_name)s:\n"
-                            "Consumption amount untaxed: %(consumption_untaxed_amount)s !\n"
-                            "Available amount untaxed : %(available_untaxed_amount)s !\n"
-                            "Even the consumption and available budget are displayed"
-                            " as untaxed amount,\n"
-                            "budget validation are based on taxed amounts !\n"
+                            "Consumption total amount: %(consumption_total_amount)s !\n"
+                            "Available total amount: %(available_total_amount)s !\n"
+                            "Please note that budget validation are based on taxed amounts!\n"
                         )
                         % {
                             "budget_name": f"{budget.name}",
-                            "consumption_untaxed_amount": f"{consumption_untaxed_amount}",
-                            "available_untaxed_amount": f"{available_untaxed_amount}",
+                            "consumption_total_amount": f"{consumption_total_amount}",
+                            "available_total_amount": f"{available_total_amount}",
                         }
                     )
 
