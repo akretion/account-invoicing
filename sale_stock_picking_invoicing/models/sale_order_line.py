@@ -1,6 +1,6 @@
 # Copyright (C) 2013-Today - Akretion (<http://www.akretion.com>).
 # @author Renato Lima <renato.lima@akretion.com.br>
-# @author Raphael Valyi <raphael.valyi@akretion.com>
+# @author Raphael Valyi <raphael.valyi@akretion.com.br>
 # @author Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 

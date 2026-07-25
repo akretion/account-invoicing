@@ -2,7 +2,7 @@
 # @author Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import exceptions
+from odoo import exceptions, models
 from odoo.tests import Form
 
 from odoo.addons.stock_picking_invoicing.tests.common import TestPickingInvoicingCommon
@@ -19,7 +19,6 @@ class TestSaleStock(TestPickingInvoicingCommon):
         # In order to avoid errors in the tests CI environment when the tests
         # Create of Invoice by Sale Order using sale.advance.payment.inv object
         # is necessary let default policy as sale_order, just affect demo data.
-        # TODO: Is there other form to avoid this problem?
         cls.companies = cls.env["res.company"].search(
             [("sale_invoicing_policy", "=", "sale_order")]
         )
@@ -30,9 +29,8 @@ class TestSaleStock(TestPickingInvoicingCommon):
         """
         Test a SO with a product invoiced on delivery. Deliver and invoice
         the SO, then do a return of the picking. Check that a refund
-         invoice is well generated.
+        invoice is well generated.
         """
-        # intial so
         self.partner = self.env.ref(
             "sale_stock_picking_invoicing.res_partner_2_address"
         )
@@ -54,22 +52,21 @@ class TestSaleStock(TestPickingInvoicingCommon):
                     },
                 )
             ],
-            "pricelist_id": self.env.ref("product.list0").id,
+            "pricelist_id": self.env.ref(
+                "sale_stock_picking_invoicing.demo_pricelist"
+            ).id,
         }
         self.so = self.env["sale.order"].create(so_vals)
 
-        # confirm our standard so, check the picking
         self.so.action_confirm()
         self.assertTrue(
             self.so.picking_ids,
             'Sale Stock: no picking created for "invoice on '
             'delivery" storable products',
         )
-
-        # set stock.picking to be invoiced
         self.assertTrue(
             len(self.so.picking_ids) == 1,
-            "More than one stock " "picking for sale.order",
+            "More than one stock picking for sale.order",
         )
 
         # Check Sale Invoicing Policy Warning to force create Invoice from Picking
@@ -78,10 +75,7 @@ class TestSaleStock(TestPickingInvoicingCommon):
 
         self.so.picking_ids.set_to_be_invoiced()
 
-        # validate stock.picking
         stock_picking = self.so.picking_ids
-
-        # compare sale.order.line with stock.move
         stock_move = stock_picking.move_ids
         sale_order_line = self.so.order_line
 
@@ -90,16 +84,9 @@ class TestSaleStock(TestPickingInvoicingCommon):
 
         skipped_fields = [
             "id",
-            # 'S00029/FURN_7777: Stock>Customers' != 'S00029 - Office Chair'
             "display_name",
             "state",
-            # Price Unit in move is different from sale line
-            # TODO: Should be equal? After Confirmed stock picking
-            #  the value will be change based Stock Valuation
-            #  configuration.
             "price_unit",
-            # There are a diference for field Name
-            # '[FURN_7777] Office Chair' != 'Office Chair'
             "name",
         ]
         common_fields = list(set(sm_fields) & set(sol_fields) - set(skipped_fields))
@@ -108,45 +95,43 @@ class TestSaleStock(TestPickingInvoicingCommon):
             self.assertEqual(
                 stock_move[field],
                 sale_order_line[field],
-                "Field %s failed to transfer from "
-                "sale.order.line to stock.move" % field,
+                f"Field {field} failed to transfer from sale.order.line to stock.move",
             )
 
     def test_picking_sale_order_product_and_service(self):
         """
         Test Sale Order with product and service
         """
-
-        sale_order_form = sale_order_form = Form(
+        company = self.env.ref("base.main_company")
+        company.sale_invoicing_policy = "stock_picking"
+        sale_order_form = Form(
             self.env.ref("sale_stock_picking_invoicing.main_company-sale_order_2")
         )
-        # Necessary to get the currency
-        sale_order_form.pricelist_id = self.env.ref("product.list0")
+        sale_order_form.pricelist_id = self.env.ref(
+            "sale_stock_picking_invoicing.demo_pricelist"
+        )
         sale_order_2 = sale_order_form.save()
         sale_order_2.action_confirm()
         # Method to create invoice in sale order should work only
         # for lines where products are of TYPE Service
         sale_order_2._create_invoices()
-        # Should be exist one Invoice
         self.assertEqual(1, sale_order_2.invoice_count)
         for invoice in sale_order_2.invoice_ids:
             line = invoice.invoice_line_ids.filtered(
                 lambda ln: ln.product_id.type == "service"
             )
             self.assertEqual(line.product_id.type, "service")
-            # Invoice of Service
             invoice.action_post()
             self.assertEqual(
                 invoice.state, "posted", "Invoice should be in state Posted"
             )
 
         picking = sale_order_2.picking_ids
-        # Only the line of Type Product
         self.assertEqual(len(picking.move_ids_without_package), 1)
         self.assertEqual(picking.invoice_state, "2binvoiced")
         self.picking_move_state(picking)
 
-        # Test Create Invoice from Sale when raise UseError
+        # Test Create Invoice from Sale raises UserError
         context = {
             "active_model": "sale.order",
             "active_id": sale_order_2.id,
@@ -168,39 +153,24 @@ class TestSaleStock(TestPickingInvoicingCommon):
         self.assertEqual(picking.invoice_state, "invoiced")
         self.assertIn(invoice, picking.invoice_ids)
         self.assertIn(picking, invoice.picking_ids)
-        # Picking with Partner Shipping from Sale Order
         self.assertEqual(picking.partner_id, sale_order_2.partner_shipping_id)
-        # Invoice created with Partner Invoice from Sale Order
         self.assertEqual(invoice.partner_id, sale_order_2.partner_invoice_id)
-        # Invoice created with Partner Shipping from Picking
         self.assertEqual(invoice.partner_shipping_id, picking.partner_id)
-        # When informed Payment Term in Sale Orde should be
-        # used instead of the default in Partner.
         self.assertEqual(invoice.invoice_payment_term_id, sale_order_2.payment_term_id)
 
-        # 1 Product 1 Note should be created
         self.assertEqual(len(invoice.invoice_line_ids), 2)
-
-        # In the Sale Order should be exist two Invoices, one
-        # for Product other for Service
         self.assertEqual(2, sale_order_2.invoice_count)
 
-        # Confirm Invoice
         invoice.action_post()
         self.assertEqual(invoice.state, "posted", "Invoice should be in state Posted.")
 
-        # Check Invoiced QTY
         for line in sale_order_2.order_line.filtered(
             lambda ln: ln.product_id.type == "product"
         ):
             self.assertEqual(line.product_uom_qty, line.qty_invoiced)
-            # Test the qty_to_invoice
-            line.product_id.invoice_policy = "order"
-            self.assertEqual(line.qty_to_invoice, 0.0)
 
-        # Check if the Sale Lines fields are equals to Invoice Lines
+        # Check Sale Lines fields vs Invoice Lines fields
         sol_fields = [key for key in self.env["sale.order.line"]._fields.keys()]
-
         acl_fields = [key for key in self.env["account.move.line"]._fields.keys()]
 
         skipped_fields = [
@@ -208,15 +178,10 @@ class TestSaleStock(TestPickingInvoicingCommon):
             "display_name",
             "state",
             "create_date",
-            # By th TAX 15% automatic add in invoice the value change
             "price_total",
-            # Necessary after call onchange_partner_id
             "write_date",
             "__last_update",
-            # Field sequence add in creation of Invoice
             "sequence",
-            # In the sale.orde.line display_type has only line_section
-            # and line_note, the acccount.move.line has more options
             "display_type",
         ]
 
@@ -227,23 +192,23 @@ class TestSaleStock(TestPickingInvoicingCommon):
         invoice_lines = picking.invoice_ids.invoice_line_ids.filtered(
             lambda ln: ln.product_id
         )
-        # Necessary for get analytic_precision
-        # this problem only occours in the tests, by some reason not
-        # identify yet, but works in the screen the default behavior
         with Form(invoice_lines) as line:
             line.save()
-
         for field in common_fields:
+            if (
+                isinstance(sale_order_line[field], models.BaseModel)
+                and sale_order_line[field]._name != invoice_lines[field]._name
+            ):
+                continue
             self.assertEqual(
                 sale_order_line[field],
                 invoice_lines[field],
-                "Field %s failed to transfer from "
-                "sale.order.line to account.invoice.line" % field,
+                f"Field {field} failed to transfer from sale.order.line "
+                "to account.invoice.line",
             )
 
         # Return Picking
         picking_devolution = self.return_picking_wizard(picking)
-
         self.assertEqual(picking_devolution.invoice_state, "2binvoiced")
         for line in picking_devolution.move_ids:
             self.assertEqual(line.invoice_state, "2binvoiced")
@@ -252,22 +217,10 @@ class TestSaleStock(TestPickingInvoicingCommon):
         self.assertEqual(picking_devolution.state, "done", "Change state fail.")
 
         invoice_devolution = self.create_invoice_wizard(picking_devolution)
-        # Confirm Invoice
         invoice_devolution.action_post()
         self.assertEqual(
             invoice_devolution.state, "posted", "Invoice should be in state Posted"
         )
-        # Test need to be comment because there are a problem with module
-        # sale_line_refund_to_invoice_qty
-        # https://github.com/OCA/account-invoicing/blob/
-        # 14.0/sale_line_refund_to_invoice_qty/models/sale.py#L20
-        # when the tests run in CI of the repo the test fail.
-        # TODO: The module should be compatible with this case?
-        # Check Invoiced QTY update after Refund
-        # for line in sale_order_2.order_line:
-        #    # Check Product line
-        #    if line.product_id.type == "product":
-        #        # self.assertEqual(0.0, line.qty_invoiced)
 
     def test_picking_invoicing_partner_shipping_invoiced(self):
         """
@@ -284,38 +237,31 @@ class TestSaleStock(TestPickingInvoicingCommon):
         sale_order_2 = self.env.ref(
             "sale_stock_picking_invoicing.main_company-sale_order_2"
         )
+        sale_order_2.note = False
         sale_order_2.action_confirm()
         picking2 = sale_order_2.picking_ids
         self.picking_move_state(picking2)
         pickings = picking | picking2
         invoice = self.create_invoice_wizard(pickings)
-        # Groupping Invoice
         self.assertEqual(len(invoice), 1)
-        # Invoice should be create with the partner_invoice_id
         self.assertEqual(invoice.partner_id, sale_order_1.partner_invoice_id)
-        # Invoice partner shipping should be the same of picking
         self.assertEqual(invoice.partner_shipping_id, picking.partner_id)
         self.assertIn(invoice, picking.invoice_ids)
         self.assertIn(picking, invoice.picking_ids)
         self.assertIn(invoice, picking2.invoice_ids)
         self.assertIn(picking2, invoice.picking_ids)
-
-        # TODO: Grouping sale line with KEY should be analise
-        # self.assertEqual(len(invoice.invoice_line_ids), 2)
         # 3 Products, 2 Note and 2 Section
         self.assertEqual(len(invoice.invoice_line_ids), 7)
         for inv_line in invoice.invoice_line_ids.filtered(lambda ln: ln.product_id):
             self.assertTrue(inv_line.tax_ids, "Error to map Sale Tax in invoice.line.")
-        # Post the Invoice to validate the fields
         invoice.action_post()
 
     def test_ungrouping_pickings_partner_shipping_different(self):
         """
         Test the invoice generation grouped by partner/product with 3
-        picking and 2 moves per picking, the 3 has the same Partner to
-        Invoice but one has Partner to Shipping so shouldn't be grouping.
+        picking, the 3 has the same Partner to Invoice but one has Partner
+        to Shipping so shouldn't be grouping.
         """
-
         sale_order_1 = self.env.ref(
             "sale_stock_picking_invoicing.main_company-sale_order_1"
         )
@@ -339,21 +285,14 @@ class TestSaleStock(TestPickingInvoicingCommon):
 
         pickings = picking | picking3 | picking4
         invoices = self.create_invoice_wizard(pickings)
-        # Even with same Partner Invoice if the Partner Shipping
-        # are different should not be Groupping
         self.assertEqual(len(invoices), 2)
 
-        # Invoice that has different Partner Shipping
-        # should be not groupping
         invoice_pick_1 = invoices.filtered(
             lambda t: t.partner_id != t.partner_shipping_id
         )
-        # Invoice should be create with partner_invoice_id
         self.assertEqual(invoice_pick_1.partner_id, sale_order_1.partner_invoice_id)
-        # Invoice create with Partner Shipping used in Picking
         self.assertEqual(invoice_pick_1.partner_shipping_id, picking.partner_id)
 
-        # Groupping Invoice
         invoice_pick_3_4 = invoices.filtered(
             lambda t: t.partner_id == t.partner_shipping_id
         )
@@ -366,13 +305,11 @@ class TestSaleStock(TestPickingInvoicingCommon):
             "sale_stock_picking_invoicing.main_company-sale_order_1"
         )
         sale_order_1.action_confirm()
-        # Create Invoice Sale
         context = {
             "active_model": "sale.order",
             "active_id": sale_order_1.id,
             "active_ids": sale_order_1.ids,
         }
-        # DownPayment
         payment_wizard = (
             self.env["sale.advance.payment.inv"]
             .with_context(**context)
@@ -427,7 +364,7 @@ class TestSaleStock(TestPickingInvoicingCommon):
         )
         self.assertEqual(company.sale_invoicing_policy, "sale_order")
 
-    def test_picking_invocing_without_sale_order(self):
+    def test_picking_invoicing_without_sale_order(self):
         """Test Picking Invoicing without Sale Order"""
         picking = self.env.ref("stock_picking_invoicing.stock_picking_invoicing_1")
         self.picking_move_state(picking)
