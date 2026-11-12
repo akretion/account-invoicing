@@ -36,6 +36,14 @@ class SaleOrderLine(models.Model):
                     )
             line.qty_to_invoice = qty_to_invoice
 
+    def _prepare_invoice_line(self, **optional_values):
+        # An invoice line generated from a sale order line is meant to be
+        # reinvoiced: a credit note created from the sale order gives its
+        # quantities back to the quantity to invoice.
+        res = super()._prepare_invoice_line(**optional_values)
+        res["sale_qty_to_reinvoice"] = True
+        return res
+
     @api.depends(
         "product_uom_qty",
         "invoice_lines.move_id.state",

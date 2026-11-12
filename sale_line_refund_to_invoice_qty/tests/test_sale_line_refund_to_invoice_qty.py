@@ -73,3 +73,20 @@ class TestSaleLineRefundToInvoiceQty(SavepointCase):
             self.assertTrue(line.sale_qty_to_reinvoice)
         self.assertEqual(self.order.order_line[0].qty_to_invoice, 5.0)
         self.assertEqual(self.order.order_line[0].qty_refunded_not_invoiceable, 0.0)
+
+    def test_refund_from_sale_order_to_reinvoice(self):
+        """
+        Test that a credit note generated from the sales order keeps its
+        quantities to reinvoice: the returned quantity is invoiced back from
+        the sales order and the quantity to invoice falls back to zero.
+        """
+        order_line = self.order.order_line[0]
+        # The customer returns 2 units: the delivered quantity goes back to 3
+        order_line.write({"qty_delivered": 3.0})
+        self.assertEqual(order_line.qty_to_invoice, -2.0)
+        credit_note = self.order._create_invoices(final=True)
+        self.assertEqual(credit_note.move_type, "out_refund")
+        for line in credit_note.invoice_line_ids:
+            self.assertTrue(line.sale_qty_to_reinvoice)
+        self.assertEqual(order_line.qty_to_invoice, 0.0)
+        self.assertEqual(order_line.qty_refunded_not_invoiceable, 0.0)
