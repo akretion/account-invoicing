@@ -8,13 +8,15 @@ class AccountMove(models.Model):
 
     def _reverse_move_vals(self, default_values, cancel=True):
         # Set the sale_qty_to_reinvoice based on the boolean from the
-        # reversal wizard
+        # reversal wizard. Callers that do not pass the key (the switch of an
+        # invoice into a credit note) keep the flag copied from the lines.
         move_vals = super(AccountMove, self)._reverse_move_vals(
             default_values, cancel=cancel
         )
-        sale_qty_to_reinvoice = self.env.context.get("sale_qty_to_reinvoice", False)
-        for vals in move_vals["line_ids"]:
-            vals[2].update({"sale_qty_to_reinvoice": sale_qty_to_reinvoice})
+        if "sale_qty_to_reinvoice" in self.env.context:
+            to_reinvoice = bool(self.env.context["sale_qty_to_reinvoice"])
+            for vals in move_vals["line_ids"]:
+                vals[2].update({"sale_qty_to_reinvoice": to_reinvoice})
         return move_vals
 
 
